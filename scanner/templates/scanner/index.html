@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Barcode Scanner</title>
+</head>
+<body>
+    <input type="text" id="barcode-input">
+
+    <script>
+        document.getElementById('barcode-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                let barcode = this.value;
+                fetch(`/scan/${barcode}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.success);
+                    } else if (data.error) {
+                        alert(data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred.');
+                });
+                this.value = '';
+            }
+        });
+    </script>
+</body>
+</html>
