@@ -1,36 +1,540 @@
+{% load static %}
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Barcode Scanner</title>
-</head>
-<body>
-    <input type="text" id="barcode-input">
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inventory Scanner - Barcode Management System</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("https://images.unsplash.com/photo-1553413077-190dd305871c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        filter: blur(8px);
+        z-index: -2;
+      }
+
+      body::after {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to right, #6aa644 0%, #6aa644 100%);
+        opacity: 0.85;
+        z-index: -1;
+      }
+
+      .container {
+        max-width: 600px;
+        width: 100%;
+        animation: fadeIn 0.8s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+        color: white;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .header p {
+        font-size: 1.1rem;
+        opacity: 0.95;
+        font-weight: 300;
+      }
+
+      .scanner-card {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.8s ease-out 0.2s both;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .scanner-icon {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .scanner-icon svg {
+        width: 80px;
+        height: 80px;
+        stroke: #6aa644;
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.05);
+          opacity: 0.8;
+        }
+      }
+
+      .input-group {
+        margin-bottom: 20px;
+      }
+
+      .input-group label {
+        display: block;
+        margin-bottom: 10px;
+        color: #333;
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+
+      .barcode-input {
+        width: 100%;
+        padding: 16px 20px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+      }
+
+      .barcode-input:focus {
+        outline: none;
+        border-color: #6aa644;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(106, 166, 68, 0.1);
+      }
+
+      .hint {
+        margin-top: 15px;
+        text-align: center;
+        color: #666;
+        font-size: 0.9rem;
+      }
+
+      .hint kbd {
+        display: inline-block;
+        padding: 4px 8px;
+        background: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.85rem;
+        box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
+      }
+
+      .stats {
+        margin-top: 30px;
+        padding-top: 30px;
+        border-top: 1px solid #e0e0e0;
+      }
+
+      .stats-title {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 15px;
+        text-align: center;
+        font-weight: 600;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+      }
+
+      .stat-item {
+        text-align: center;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 10px;
+      }
+
+      .stat-icon {
+        font-size: 1.5rem;
+        margin-bottom: 5px;
+      }
+
+      .stat-label {
+        font-size: 0.75rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .powered-by {
+        margin-top: 25px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        animation: fadeIn 0.8s ease-out 0.4s both;
+      }
+
+      .powered-by-text {
+        font-size: 1.1rem;
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 500;
+      }
+
+      .brand-logo {
+        height: 45px;
+        width: auto;
+        object-fit: contain;
+      }
+
+      /* Toast Notification */
+      .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        padding: 20px 24px;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        min-width: 300px;
+        max-width: 400px;
+        transform: translateX(500px);
+        opacity: 0;
+        transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        z-index: 1000;
+      }
+
+      .toast.show {
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      .toast.success {
+        border-left: 4px solid #10b981;
+      }
+
+      .toast.error {
+        border-left: 4px solid #ef4444;
+      }
+
+      .toast-icon {
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+      }
+
+      .toast-icon.success {
+        stroke: #10b981;
+      }
+
+      .toast-icon.error {
+        stroke: #ef4444;
+      }
+
+      .toast-content {
+        flex: 1;
+      }
+
+      .toast-message {
+        color: #333;
+        font-size: 0.95rem;
+        line-height: 1.4;
+      }
+
+      .toast-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.5;
+        transition: opacity 0.2s;
+      }
+
+      .toast-close:hover {
+        opacity: 1;
+      }
+
+      .loading {
+        position: relative;
+        pointer-events: none;
+        opacity: 0.6;
+      }
+
+      .loading::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+        border: 3px solid #6aa644;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: translate(-50%, -50%) rotate(360deg);
+        }
+      }
+
+      @media (max-width: 600px) {
+        .header h1 {
+          font-size: 2rem;
+        }
+
+        .scanner-card {
+          padding: 30px 20px;
+        }
+
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .toast {
+          left: 20px;
+          right: 20px;
+          min-width: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Inventory Scanner</h1>
+        <p>Scan barcodes to track your inventory</p>
+      </div>
+
+      <div class="scanner-card">
+        <div class="scanner-icon">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+            <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+            <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+            <path d="M8 7h1"></path>
+            <path d="M12 7h1"></path>
+            <path d="M16 7h1"></path>
+            <path d="M8 12h8"></path>
+            <path d="M8 17h2"></path>
+            <path d="M14 17h2"></path>
+          </svg>
+        </div>
+
+        <div class="input-group">
+          <label for="barcode-input">Enter or Scan Barcode</label>
+          <input
+            type="text"
+            id="barcode-input"
+            class="barcode-input"
+            placeholder="Scan or type barcode..."
+            autocomplete="off"
+            autofocus
+          />
+        </div>
+
+        <div class="hint">Press <kbd>Enter</kbd> to submit</div>
+      </div>
+
+      <div class="powered-by">
+        <span class="powered-by-text">Powered by</span>
+        <img
+          src="{% static 'scanner/brand-logo.png' %}"
+          alt="Brand Logo"
+          class="brand-logo"
+        />
+      </div>
+    </div>
+
+    <div id="toast" class="toast">
+      <svg
+        class="toast-icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+      <div class="toast-content">
+        <div class="toast-message" id="toast-message"></div>
+      </div>
+      <button class="toast-close" onclick="hideToast()">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
 
     <script>
-        document.getElementById('barcode-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                let barcode = this.value;
-                fetch(`/scan/${barcode}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.success);
-                    } else if (data.error) {
-                        alert(data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred.');
-                });
-                this.value = '';
-            }
-        });
+      const input = document.getElementById("barcode-input");
+      const toast = document.getElementById("toast");
+      const toastMessage = document.getElementById("toast-message");
+      const toastIcon = toast.querySelector(".toast-icon");
+
+      let toastTimeout;
+
+      function showToast(message, type = "success") {
+        // Clear existing timeout
+        if (toastTimeout) {
+          clearTimeout(toastTimeout);
+        }
+
+        // Update toast content
+        toastMessage.textContent = message;
+        toast.className = "toast " + type;
+        toastIcon.className = "toast-icon " + type;
+
+        // Update icon based on type
+        if (type === "success") {
+          toastIcon.innerHTML = `
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                `;
+        } else {
+          toastIcon.innerHTML = `
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                `;
+        }
+
+        // Show toast
+        setTimeout(() => {
+          toast.classList.add("show");
+        }, 10);
+
+        // Auto hide after 5 seconds
+        toastTimeout = setTimeout(() => {
+          hideToast();
+        }, 5000);
+      }
+
+      function hideToast() {
+        toast.classList.remove("show");
+      }
+
+      input.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          const barcode = this.value.trim();
+
+          if (!barcode) {
+            showToast("Please enter a barcode", "error");
+            return;
+          }
+
+          // Add loading state
+          input.classList.add("loading");
+          input.disabled = true;
+
+          fetch(`/scan/${barcode}/`, {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": "{{ csrf_token }}",
+            },
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.success) {
+                showToast(data.success, "success");
+              } else if (data.error) {
+                showToast(data.error, "error");
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              showToast("An error occurred. Please try again.", "error");
+            })
+            .finally(() => {
+              // Remove loading state
+              input.classList.remove("loading");
+              input.disabled = false;
+              input.value = "";
+              input.focus();
+            });
+        }
+      });
+
+      // Focus input on page load
+      window.addEventListener("load", () => {
+        input.focus();
+      });
     </script>
-</body>
+  </body>
 </html>
